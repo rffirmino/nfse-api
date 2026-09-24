@@ -1,0 +1,1339 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "WhatsApp/NFS-e API",
+        "description": "API de integração entre agendamentos e providers WhatsApp/NFS-e.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "Servidor atual"
+        }
+    ],
+    "paths": {
+        "/api/v1/fiscal/accounts": {
+            "get": {
+                "tags": [
+                    "Fiscal"
+                ],
+                "summary": "Lista credenciais fiscais por estabelecimento",
+                "operationId": "c0fe486be946d673bc98381f3db506c7",
+                "parameters": [
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de credenciais"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Fiscal"
+                ],
+                "summary": "Cria/atualiza a credencial fiscal de um estabelecimento",
+                "operationId": "193ae55314efdeba3a1629ca0c3bf54e",
+                "parameters": [
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "establishment_external_id",
+                                    "access_token"
+                                ],
+                                "properties": {
+                                    "establishment_external_id": {
+                                        "type": "string",
+                                        "example": "est-001"
+                                    },
+                                    "provider": {
+                                        "type": "string",
+                                        "example": "asaas"
+                                    },
+                                    "access_token": {
+                                        "description": "Token da subconta (armazenado criptografado)",
+                                        "type": "string"
+                                    },
+                                    "base_url": {
+                                        "type": "string",
+                                        "example": "https://api-sandbox.asaas.com",
+                                        "nullable": true
+                                    },
+                                    "environment": {
+                                        "type": "string",
+                                        "example": "sandbox"
+                                    },
+                                    "active": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Credencial salva"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/inbound-messages": {
+            "get": {
+                "tags": [
+                    "Inbound"
+                ],
+                "summary": "Lista mensagens recebidas (cliente → empresa)",
+                "operationId": "2be2aba2d653d4eba0a0ae48a6936cc0",
+                "parameters": [
+                    {
+                        "name": "wa_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "5519991170718"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 0
+                        }
+                    },
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de mensagens recebidas"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/inbound-messages/{inbound}": {
+            "get": {
+                "tags": [
+                    "Inbound"
+                ],
+                "summary": "Consulta uma mensagem recebida",
+                "operationId": "abcf4409418fb9b5abd104cb0d542de9",
+                "parameters": [
+                    {
+                        "name": "inbound",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mensagem recebida"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    },
+                    "404": {
+                        "description": "Não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/invoices": {
+            "get": {
+                "tags": [
+                    "Fiscal"
+                ],
+                "summary": "Lista solicitações fiscais (histórico)",
+                "operationId": "f90b0868c374e93f6242d40b7abd3bb6",
+                "parameters": [
+                    {
+                        "name": "establishment_external_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "appointment_external_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 0
+                        }
+                    },
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de notas"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Fiscal"
+                ],
+                "summary": "Enfileira a emissão de uma NFS-e",
+                "description": "Autenticação HMAC entre sistemas (mesmo esquema do módulo WhatsApp). O `service_code` deve ser exatamente o código de serviço configurado para o estabelecimento/município no serviço (ex.: item da LC 116 como \"6.02\"); não é um identificador interno da API.",
+                "operationId": "51afb04e336aa3a065a0f28e378ed3b6",
+                "parameters": [
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "agendamentos"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "description": "Unix timestamp (segundos); tolerância de 300s",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1788000000
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "a1b2c3d4e5f6"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "description": "HMAC-SHA256(timestamp + \"\\n\" + nonce + \"\\n\" + raw_body) com o segredo do serviço",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "sha256=..."
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "nfse:appointment:apt-001"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "establishment_external_id",
+                                    "appointment_external_id",
+                                    "customer_external_id",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "establishment_external_id": {
+                                        "description": "Estabelecimento/prestador no sistema do cliente",
+                                        "type": "string",
+                                        "example": "est-001"
+                                    },
+                                    "fiscal_configuration_id": {
+                                        "description": "Opcional: força uma configuração fiscal específica",
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "municipality_code": {
+                                        "description": "Código IBGE do município de incidência (obrigatório sem fiscal_configuration_id)",
+                                        "type": "string",
+                                        "example": "2211001"
+                                    },
+                                    "service_code": {
+                                        "description": "Código de serviço configurado para o estabelecimento/município (LC 116)",
+                                        "type": "string",
+                                        "example": "6.02"
+                                    },
+                                    "appointment_external_id": {
+                                        "type": "string",
+                                        "example": "apt-001"
+                                    },
+                                    "customer_external_id": {
+                                        "type": "string",
+                                        "example": "usr-001"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150
+                                    },
+                                    "emission_requested": {
+                                        "description": "false apenas registra a solicitação (not_requested), sem enviar ao emissor",
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Aceito para processamento (retorna invoice_id e status)"
+                    },
+                    "200": {
+                        "description": "Requisição duplicada idempotente (retorna o registro original)"
+                    },
+                    "401": {
+                        "description": "Assinatura HMAC inválida"
+                    },
+                    "422": {
+                        "description": "Dados inválidos ou sem configuração fiscal ativa"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/invoices/{invoice}": {
+            "get": {
+                "tags": [
+                    "Fiscal"
+                ],
+                "summary": "Consulta o status de uma NFS-e",
+                "operationId": "6c4a8bbba33211c975c28f8266762ddc",
+                "parameters": [
+                    {
+                        "name": "invoice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status da solicitação fiscal"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    },
+                    "404": {
+                        "description": "Não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/invoices/{invoice}/manual": {
+            "post": {
+                "tags": [
+                    "Fiscal"
+                ],
+                "summary": "Registra uma NFS-e emitida fora do sistema (provedor manual)",
+                "operationId": "761fd9ad9e36b5c33b5fe2c2637deaa4",
+                "parameters": [
+                    {
+                        "name": "invoice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "invoice_number"
+                                ],
+                                "properties": {
+                                    "invoice_number": {
+                                        "type": "string",
+                                        "example": "1234"
+                                    },
+                                    "series": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "access_key": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "protocol": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "document_url": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "xml": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Nota registrada"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    },
+                    "404": {
+                        "description": "Não encontrada"
+                    },
+                    "422": {
+                        "description": "Estado inválido para registro manual"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/invoices/{invoice}/cancel": {
+            "post": {
+                "tags": [
+                    "Fiscal"
+                ],
+                "summary": "Cancela uma NFS-e (mantendo histórico)",
+                "operationId": "545bf7234ee1ed20f63a84136c7452cf",
+                "parameters": [
+                    {
+                        "name": "invoice",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Erro de emissão"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Nota cancelada"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    },
+                    "422": {
+                        "description": "Estado inválido para cancelamento"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/fiscal/coverage": {
+            "get": {
+                "tags": [
+                    "Fiscal"
+                ],
+                "summary": "Verifica cobertura/configuração fiscal de um município/serviço (onboarding)",
+                "operationId": "e81fbb13ab88f73fe933f24c3a8f3351",
+                "parameters": [
+                    {
+                        "name": "establishment_external_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "municipality_code",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "service_code",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cobertura/configuração"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/messages": {
+            "post": {
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Enfileira uma notificação",
+                "description": "Autenticação HMAC entre sistemas. `establishment_external_id` é opcional hoje (número central) e passa a identificar o estabelecimento na fase de número próprio por tenant.",
+                "operationId": "a82ec5d449b34296833ea2348fd5805d",
+                "parameters": [
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "agendamentos"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1788000000
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "a1b2c3d4e5f6"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "sha256=..."
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "event",
+                                    "recipient"
+                                ],
+                                "properties": {
+                                    "event": {
+                                        "type": "string",
+                                        "example": "appointment.created"
+                                    },
+                                    "establishment_external_id": {
+                                        "description": "Opcional; identifica o estabelecimento de origem",
+                                        "type": "string",
+                                        "example": "est-001",
+                                        "nullable": true
+                                    },
+                                    "recipient": {
+                                        "properties": {
+                                            "role": {
+                                                "type": "string",
+                                                "example": "customer"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "+5511999999999"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "template": {
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "example": "lembrete_agendamento_v1"
+                                            },
+                                            "language": {
+                                                "type": "string",
+                                                "example": "pt_BR"
+                                            },
+                                            "parameters": {
+                                                "type": "array",
+                                                "items": {
+                                                    "properties": {
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "value": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "type": "object",
+                                        "nullable": true
+                                    },
+                                    "text": {
+                                        "properties": {
+                                            "body": {
+                                                "type": "string",
+                                                "example": "Bom dia! Confirmamos seu agendamento."
+                                            }
+                                        },
+                                        "type": "object",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Requisicao duplicada idempotente"
+                    },
+                    "202": {
+                        "description": "Aceito para processamento"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/messages/{message}": {
+            "get": {
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Consulta o status de uma notificação",
+                "operationId": "6aba0ca4020fa07211c59c97f567e35b",
+                "responses": {
+                    "200": {
+                        "description": "Status da mensagem"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    },
+                    "404": {
+                        "description": "Não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/whatsapp/senders": {
+            "get": {
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Lista senders (número por estabelecimento)",
+                "operationId": "f90abb9a2e57d5a0367af345340ddfce",
+                "parameters": [
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de senders"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Cria/atualiza o sender de um estabelecimento",
+                "operationId": "b308ad9db700689974743d5c9b43bdf6",
+                "parameters": [
+                    {
+                        "name": "X-Client-Id",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Timestamp",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "X-Nonce",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Signature",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "establishment_external_id",
+                                    "phone_number_id",
+                                    "access_token"
+                                ],
+                                "properties": {
+                                    "establishment_external_id": {
+                                        "type": "string",
+                                        "example": "est-001"
+                                    },
+                                    "phone_number_id": {
+                                        "type": "string",
+                                        "example": "1314669508391450"
+                                    },
+                                    "waba_id": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "display_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "access_token": {
+                                        "description": "Token do estabelecimento (armazenado criptografado)",
+                                        "type": "string"
+                                    },
+                                    "active": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Sender salvo"
+                    },
+                    "401": {
+                        "description": "Assinatura inválida"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "hmac": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "hmac": {
+                "type": "apiKey",
+                "name": "X-Signature",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Messages",
+            "description": "Notificações WhatsApp"
+        },
+        {
+            "name": "Inbound",
+            "description": "Mensagens recebidas (cliente → empresa)"
+        },
+        {
+            "name": "Fiscal",
+            "description": "Emissão e consulta de NFS-e"
+        }
+    ]
+}
