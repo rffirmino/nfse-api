@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\FiscalProvider;
 use App\Fiscal\AsaasFiscalProvider;
 use App\Fiscal\ManualFiscalProvider;
+use App\Jobs\DeliverNfseInvoice;
 use App\Models\FiscalAccount;
 use App\Models\NfseInvoice;
 use App\Models\NfseInvoiceEvent;
@@ -72,6 +73,13 @@ class InvoiceIssuanceService
                     'issued_at' => $result->status === 'authorized' ? now() : null,
                 ])->save();
                 NfseInvoiceEvent::create(['invoice_id' => $current->id, 'from_status' => 'processing', 'to_status' => $result->status, 'event' => 'issue.finished', 'message' => $result->message, 'metadata' => $result->payload]);
+
+                // Nota autorizada: entrega ao cliente final nos canais
+                // habilitados pelo estabelecimento (WhatsApp/e-mail/download).
+                if ($result->status === 'authorized' && $current->hasRequestedDelivery()) {
+                    DeliverNfseInvoice::dispatch($current->id);
+                }
+
                 return $current;
             });
         } catch (Throwable $exception) {

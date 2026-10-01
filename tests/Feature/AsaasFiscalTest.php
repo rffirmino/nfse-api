@@ -162,6 +162,18 @@ class AsaasFiscalTest extends TestCase
             ->assertJsonPath('provider_check.requires_certificate', false);
     }
 
+    public function test_base_url_with_v3_suffix_is_normalized(): void
+    {
+        Http::fake(['https://asaas.test/v3/invoices' => Http::response([
+            'id' => 'inv_n', 'status' => 'AUTHORIZED',
+        ], 200)]);
+
+        $result = (new AsaasFiscalProvider('tok', 'https://asaas.test/v3'))->issueInvoice($this->invoice());
+
+        $this->assertSame('authorized', $result->status);
+        Http::assertSent(fn ($request) => $request->url() === 'https://asaas.test/v3/invoices');
+    }
+
     public function test_asaas_webhook_updates_invoice_idempotently(): void
     {
         config(['services.asaas.webhook_token' => 'wh-token']);

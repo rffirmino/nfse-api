@@ -20,6 +20,14 @@ return [
         'callback_url' => env('INBOUND_CALLBACK_URL'),
         'callback_secret' => env('INBOUND_CALLBACK_SECRET'),
     ],
+    // Entrega da NFS-e ao cliente final (canais habilitados pelo estabelecimento)
+    'nfse_delivery' => [
+        // Template aprovado na Meta (fora da janela de 24h). Vazio = texto livre.
+        'whatsapp_template' => env('NFSE_WHATSAPP_TEMPLATE', ''),
+        'whatsapp_template_language' => env('NFSE_WHATSAPP_TEMPLATE_LANGUAGE', 'pt_BR'),
+        'email_from' => env('NFSE_EMAIL_FROM', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
+        'email_from_name' => env('NFSE_EMAIL_FROM_NAME', env('MAIL_FROM_NAME', 'Example')),
+    ],
     'whatsapp' => [
         'provider' => env('WHATSAPP_PROVIDER', 'fake'),
         'graph_base_url' => env('META_GRAPH_BASE_URL', 'https://graph.facebook.com'),

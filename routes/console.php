@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Reconciliação fiscal (rede de segurança do webhook do Asaas).
 Schedule::command('fiscal:reconcile')->everyFiveMinutes()->withoutOverlapping();
+
+// Entrega da NFS-e ao cliente final (retry de WhatsApp/e-mail).
+Schedule::command('nfse:deliver --retry-failed')->everyTenMinutes()->withoutOverlapping();

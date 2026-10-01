@@ -10,6 +10,7 @@ use App\Fiscal\AsaasFiscalProvider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\DeliverNfseInvoice;
 use App\Jobs\IssueNfseInvoice;
 
 use OpenApi\Attributes as OA;
@@ -45,6 +46,17 @@ class InvoiceController extends Controller
                     new OA\Property(property: 'customer_external_id', type: 'string', example: 'usr-001'),
                     new OA\Property(property: 'amount', type: 'number', format: 'float', example: 150.00),
                     new OA\Property(property: 'emission_requested', type: 'boolean', default: true, description: 'false apenas registra a solicitação (not_requested), sem enviar ao emissor'),
+                    new OA\Property(property: 'customer', type: 'object', nullable: true, description: 'Contato do cliente final, usado na entrega da nota', properties: [
+                        new OA\Property(property: 'name', type: 'string', nullable: true, example: 'Maria Silva'),
+                        new OA\Property(property: 'phone', type: 'string', nullable: true, example: '11999999999', description: 'Somente dígitos; com DDI quando necessário. Necessário para o canal WhatsApp'),
+                        new OA\Property(property: 'email', type: 'string', nullable: true, example: 'maria@exemplo.com', description: 'Necessário para o canal e-mail'),
+                        new OA\Property(property: 'cpf_cnpj', type: 'string', nullable: true, example: '12345678909', description: 'CPF/CNPJ do tomador — exigido pelo provedor fiscal para localizar/criar o cliente na API'),
+                    ]),
+                    new OA\Property(property: 'delivery', type: 'object', nullable: true, description: 'Canais de entrega da NFS-e ao cliente final. Default-deny: ausente (ou sem true) não entrega nada. Quando omitido, usa o padrão da configuração fiscal do estabelecimento', properties: [
+                        new OA\Property(property: 'whatsapp', type: 'boolean', default: false),
+                        new OA\Property(property: 'email', type: 'boolean', default: false),
+                        new OA\Property(property: 'download', type: 'boolean', default: false, description: 'Disponibiliza o documento para download no app do sistema do cliente'),
+                    ]),
                 ],
             ),
         ),
@@ -66,6 +78,15 @@ class InvoiceController extends Controller
             'customer_external_id' => ['required', 'string', 'max:150'],
             'amount' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
             'emission_requested' => ['sometimes', 'boolean'],
+            'customer' => ['sometimes', 'array'],
+            'customer.name' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'customer.phone' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'customer.email' => ['sometimes', 'nullable', 'email', 'max:150'],
+            'customer.cpf_cnpj' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'delivery' => ['sometimes', 'array'],
+            'delivery.whatsapp' => ['sometimes', 'boolean'],
+            'delivery.email' => ['sometimes', 'boolean'],
+            'delivery.download' => ['sometimes', 'boolean'],
         ]);
 
         $idempotencyKey = (string) $request->header('Idempotency-Key', '');
@@ -110,12 +131,28 @@ class InvoiceController extends Controller
         }
 
         $invoice = DB::transaction(function () use ($data, $requested, $idempotencyKey, $request, $configuration): NfseInvoice {
+            $channels = $this->resolveDeliveryChannels($data, $configuration);
+            $customer = $data['customer'] ?? [];
+            $hasCustomer = $customer !== [];
+
             return NfseInvoice::create(array_merge($data, [
                 'status' => $requested ? 'pending' : 'not_requested',
                 'fiscal_configuration_id' => $configuration->id,
                 'provider' => $configuration->provider,
                 'idempotency_key' => $idempotencyKey,
-                'request_payload' => $request->all(),
+                // Os dados do tomador também vão no topo do payload: é de lá que
+                // o provider fiscal (Asaas) lê para localizar/criar o cliente.
+                'request_payload' => array_merge($request->all(), $hasCustomer ? [
+                    'customer_name' => $customer['name'] ?? null,
+                    'customer_cpf_cnpj' => $customer['cpf_cnpj'] ?? null,
+                    'customer_email' => $customer['email'] ?? null,
+                    'customer_phone' => $customer['phone'] ?? null,
+                ] : []),
+                'customer_name' => $customer['name'] ?? null,
+                'customer_phone' => $customer['phone'] ?? null,
+                'customer_email' => $customer['email'] ?? null,
+                'delivery_channels' => $channels,
+                'delivery_status' => in_array(true, $channels, true) ? 'pending' : 'not_requested',
             ]));
         });
 
@@ -130,6 +167,25 @@ class InvoiceController extends Controller
             'message' => 'Solicitação fiscal registrada para processamento.',
             'request_id' => $request->attributes->get('request_id'),
         ], 202);
+    }
+
+    /**
+     * Canais de entrega solicitados: o que o sistema do cliente manda vence;
+     * sem `delivery`, usa o padrão da configuração fiscal do estabelecimento.
+     * Default-deny — nada de entrega automática implícita.
+     *
+     * @return array<string, bool>
+     */
+    private function resolveDeliveryChannels(array $data, FiscalConfiguration $configuration): array
+    {
+        $source = $data['delivery'] ?? $configuration->default_delivery_channels ?? [];
+        $channels = [];
+
+        foreach (NfseInvoice::DELIVERY_CHANNELS as $channel) {
+            $channels[$channel] = (bool) ($source[$channel] ?? false);
+        }
+
+        return $channels;
     }
 
     #[OA\Get(
@@ -158,10 +214,76 @@ class InvoiceController extends Controller
             'status' => $invoice->status,
             'provider' => $invoice->provider,
             'external_id' => $invoice->external_id,
+            'invoice_number' => $invoice->invoice_number,
+            'amount' => $invoice->amount,
             'attempts' => $invoice->attempts,
             'issued_at' => $invoice->issued_at,
             'cancelled_at' => $invoice->cancelled_at,
             'error_message' => $invoice->error_message,
+            'delivery_channels' => $invoice->requestedDeliveryChannels(),
+            'delivery_status' => $invoice->delivery_status,
+            'delivery_errors' => $invoice->delivery_errors,
+            'delivered_at' => $invoice->delivered_at,
+            'has_document' => ($invoice->document_url ?? '') !== '' || ($invoice->xml ?? '') !== '',
+            'request_id' => $request->attributes->get('request_id'),
+        ]);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/invoices/{invoice}/document',
+        tags: ['Fiscal'],
+        summary: 'Download da NFS-e (documento/XML) para o app do cliente final',
+        description: 'Usado pelo sistema do cliente para disponibilizar o download da nota ao usuário. '
+            . 'Respeita o canal `download` habilitado pelo estabelecimento para a nota.',
+        security: [['hmac' => []]],
+        parameters: [
+            new OA\Parameter(name: 'invoice', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'include_xml', in: 'query', required: false, schema: new OA\Schema(type: 'boolean', default: true)),
+            new OA\Parameter(name: 'X-Client-Id', in: 'header', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'X-Timestamp', in: 'header', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'X-Nonce', in: 'header', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'X-Signature', in: 'header', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'Idempotency-Key', in: 'header', required: true, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Documento da nota (URL e/ou XML)'),
+            new OA\Response(response: 401, description: 'Assinatura inválida'),
+            new OA\Response(response: 403, description: 'Download não habilitado para esta nota'),
+            new OA\Response(response: 409, description: 'Nota ainda não autorizada ou sem documento'),
+            new OA\Response(response: 404, description: 'Não encontrada'),
+        ],
+    )]
+    public function document(Request $request, NfseInvoice $invoice): JsonResponse
+    {
+        $channels = $invoice->requestedDeliveryChannels();
+
+        if (!($channels['download'] ?? false)) {
+            return response()->json(['error' => [
+                'code' => 'download_not_enabled',
+                'message' => 'O download da nota não está habilitado para este estabelecimento/nota.',
+                'request_id' => $request->attributes->get('request_id'),
+            ]], 403);
+        }
+
+        if ($invoice->status !== 'authorized' || (($invoice->document_url ?? '') === '' && ($invoice->xml ?? '') === '')) {
+            return response()->json(['error' => [
+                'code' => 'document_unavailable',
+                'message' => 'A nota ainda não está autorizada ou não possui documento.',
+                'status' => $invoice->status,
+                'request_id' => $request->attributes->get('request_id'),
+            ]], 409);
+        }
+
+        $includeXml = filter_var($request->query('include_xml', true), FILTER_VALIDATE_BOOLEAN);
+
+        return response()->json([
+            'invoice_id' => $invoice->id,
+            'invoice_number' => $invoice->invoice_number,
+            'series' => $invoice->series,
+            'access_key' => $invoice->access_key,
+            'issued_at' => $invoice->issued_at,
+            'document_url' => $invoice->document_url,
+            'xml' => $includeXml ? $invoice->xml : null,
             'request_id' => $request->attributes->get('request_id'),
         ]);
     }
@@ -274,6 +396,10 @@ class InvoiceController extends Controller
             'event' => 'manual.registered',
             'message' => 'Nota emitida fora do sistema e registrada pela API.',
         ]);
+
+        if ($invoice->hasRequestedDelivery()) {
+            DeliverNfseInvoice::dispatch($invoice->id);
+        }
 
         return response()->json(['success' => true, 'invoice_id' => $invoice->id, 'status' => $invoice->status]);
     }

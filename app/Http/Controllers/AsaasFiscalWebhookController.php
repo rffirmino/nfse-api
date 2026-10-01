@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Fiscal\AsaasFiscalProvider;
+use App\Jobs\DeliverNfseInvoice;
 use App\Models\FiscalEvent;
 use App\Models\NfseInvoice;
 use Illuminate\Http\JsonResponse;
@@ -73,5 +74,11 @@ class AsaasFiscalWebhookController extends Controller
         }
 
         $invoice->forceFill($update)->save();
+
+        // Autorização confirmada pelo provedor: entrega ao cliente final nos
+        // canais habilitados (WhatsApp/e-mail/download).
+        if ($status === 'authorized' && $invoice->hasRequestedDelivery() && $invoice->delivery_status !== 'sent') {
+            DeliverNfseInvoice::dispatch($invoice->id);
+        }
     }
 }

@@ -23,7 +23,9 @@ class AsaasFiscalProvider implements FiscalProvider
         private string $accessToken,
         private ?string $baseUrl = null,
     ) {
-        $this->baseUrl = rtrim($this->baseUrl ?: (string) config('services.asaas.base_url', 'https://api-sandbox.asaas.com'), '/');
+        $base = rtrim($this->baseUrl ?: (string) config('services.asaas.base_url', 'https://api-sandbox.asaas.com'), '/');
+        // A base pode vir com ou sem o sufixo /v3 (ex.: https://api-sandbox.asaas.com/v3).
+        $this->baseUrl = preg_replace('#/v3$#', '', $base);
         if ($this->accessToken === '') {
             throw new RuntimeException('Asaas não configurado: token da subconta ausente.');
         }

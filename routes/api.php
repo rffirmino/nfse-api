@@ -22,6 +22,7 @@ Route::middleware(VerifyInternalHmac::class)->get('/v1/messages/{message}', [Mes
 Route::middleware(VerifyInternalHmac::class)->post('/v1/invoices', [InvoiceController::class, 'store']);
 Route::middleware(VerifyInternalHmac::class)->get('/v1/invoices', [InvoiceController::class, 'index']);
 Route::middleware(VerifyInternalHmac::class)->get('/v1/invoices/{invoice}', [InvoiceController::class, 'show']);
+Route::middleware(VerifyInternalHmac::class)->get('/v1/invoices/{invoice}/document', [InvoiceController::class, 'document']);
 Route::middleware(VerifyInternalHmac::class)->post('/v1/invoices/{invoice}/manual', [InvoiceController::class, 'manual']);
 Route::middleware(VerifyInternalHmac::class)->post('/v1/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel']);
 Route::middleware(VerifyInternalHmac::class)->get('/v1/fiscal/coverage', [InvoiceController::class, 'coverage']);
