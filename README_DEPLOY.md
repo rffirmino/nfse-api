@@ -135,26 +135,33 @@ O que ele verifica:
 
 ## Configurar o e-mail (SMTP)
 
+O remetente e a caixa sao do **cliente** (dominio `sunfitbronze.com.br`), que e o
+responsavel pelo proprio servidor/e-mail. O cliente cria a caixa
+`nfse@sunfitbronze.com.br` e nos passa as credenciais SMTP dela (host, porta,
+usuario e senha). A API apenas "autentica" nessa caixa para enviar em nome dele.
+
 ```
 MAIL_MAILER=smtp
-MAIL_HOST=smtp.seuprovedor.com
-MAIL_PORT=587
-MAIL_USERNAME=usuario
-MAIL_PASSWORD=senha
-MAIL_ENCRYPTION=tls
+MAIL_HOST=mail.sunfitbronze.com.br   # host SMTP da conta do cliente
+MAIL_PORT=465                        # 465 (SSL) ou 587 (TLS), conforme o provedor
+MAIL_USERNAME=nfse@sunfitbronze.com.br
+MAIL_PASSWORD=senha-da-caixa
+MAIL_ENCRYPTION=ssl                  # ssl (465) ou tls (587)
 MAIL_FROM_ADDRESS="nfse@sunfitbronze.com.br"
 MAIL_FROM_NAME="SunFit Bronze"
 NFSE_EMAIL_FROM="nfse@sunfitbronze.com.br"
 NFSE_EMAIL_FROM_NAME="SunFit Bronze"
 ```
 
-Requisitos: o remetente precisa estar em SPF **e** DKIM no dominio, senao a
-mensagem cai em spam. Se `sunfitbronze.com.br` ainda nao tiver os registros
-apontando para este servidor, duas saidas: (a) adicionar SPF+DKIM no DNS do
-cliente; ou (b) usar um remetente do proprio servidor (`...@teresinasoft.com.br`)
-mantendo o nome "SunFit Bronze". Confirme com `php artisan nfse:doctor --probe`.
-Com `MAIL_MAILER=log` o canal de e-mail registra falha de proposito - o sistema
-nao finge que enviou.
+Checklist para o cliente (quem controla `sunfitbronze.com.br`):
+- criar a caixa `nfse@sunfitbronze.com.br`;
+- liberar acesso SMTP/autenticacao (host, porta, usuario, senha);
+- publicar SPF e DKIM do dominio para o host SMTP dele (obrigatorio, senao cai em spam);
+- nos enviar esses 4 dados por canal seguro.
+
+Confirmacao: com a caixa funcionando, `php artisan nfse:doctor --probe` mostra
+a conexao SMTP como "ok". Com `MAIL_MAILER=log` o canal de e-mail registra falha
+de proposito - o sistema nao finge que enviou.
 
 ## Configurar o WhatsApp (Meta Cloud API)
 
