@@ -196,6 +196,38 @@ class InvoiceDeliveryTest extends TestCase
         Queue::assertPushed(\App\Jobs\SendWhatsAppMessage::class);
     }
 
+    public function test_email_attaches_xml_when_provider_returns_it(): void
+    {
+        Queue::fake();
+        Mail::fake();
+
+        $invoice = $this->invoice(['email' => true], 'authorized', [
+            'invoice_number' => '1234',
+            'xml' => '<NFe><infNFe Id="NFe1234"/></NFe>',
+        ]);
+
+        (new InvoiceDeliveryService())->deliver($invoice->id);
+
+        Mail::assertSent(NfseInvoiceMail::class, function ($mail) {
+            $attachments = $mail->attachments();
+
+            return $attachments !== []
+                && array_key_first($attachments) === 'nfse-1234.xml'
+                && $attachments['nfse-1234.xml']['mime'] === 'application/xml';
+        });
+    }
+
+    public function test_email_has_no_attachment_without_xml(): void
+    {
+        Queue::fake();
+        Mail::fake();
+
+        $invoice = $this->invoice(['email' => true], 'authorized');
+        (new InvoiceDeliveryService())->deliver($invoice->id);
+
+        Mail::assertSent(NfseInvoiceMail::class, fn ($mail) => $mail->attachments() === []);
+    }
+
     public function test_delivery_waits_for_authorization(): void
     {
         Queue::fake();

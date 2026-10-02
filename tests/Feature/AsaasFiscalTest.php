@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Fiscal\AsaasFiscalProvider;
 use App\Fiscal\FakeFiscalProvider;
+use App\Jobs\DeliverNfseInvoice;
 use App\Models\FiscalAccount;
 use App\Models\FiscalConfiguration;
 use App\Models\NfseInvoice;
@@ -11,6 +12,7 @@ use App\Services\InvoiceIssuanceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class AsaasFiscalTest extends TestCase
@@ -247,6 +249,43 @@ class AsaasFiscalTest extends TestCase
         $invoice->refresh();
         $this->assertSame('authorized', $invoice->status);
         $this->assertNotNull($invoice->issued_at);
+    }
+
+    public function test_reconciliation_dispatches_delivery_when_channels_requested(): void
+    {
+        FiscalAccount::create([
+            'establishment_external_id' => 'est-001',
+            'provider' => 'asaas',
+            'access_token' => 'tok',
+            'base_url' => 'https://asaas.test',
+            'active' => true,
+        ]);
+
+        $invoice = NfseInvoice::create([
+            'establishment_external_id' => 'est-001',
+            'appointment_external_id' => 'apt-3',
+            'customer_external_id' => 'cli-3',
+            'provider' => 'asaas',
+            'status' => 'processing',
+            'amount' => 90.00,
+            'external_id' => 'inv_rec_del',
+            'idempotency_key' => 'rec:del:1',
+            'customer_email' => 'maria@exemplo.com',
+            'delivery_channels' => ['email' => true],
+        ]);
+        DB::table('nfse_invoices')->where('id', $invoice->id)->update(['updated_at' => now()->subMinutes(10)]);
+
+        Http::fake(['https://asaas.test/v3/invoices/inv_rec_del' => Http::response([
+            'id' => 'inv_rec_del', 'status' => 'AUTHORIZED', 'number' => '78',
+        ], 200)]);
+
+        Queue::fake();
+
+        $this->artisan('fiscal:reconcile')->assertSuccessful();
+
+        Queue::assertPushed(DeliverNfseInvoice::class, function ($job) use ($invoice) {
+            return $job->invoiceId === $invoice->id;
+        });
     }
 
     public function test_fallback_to_manual_when_asaas_credential_missing(): void

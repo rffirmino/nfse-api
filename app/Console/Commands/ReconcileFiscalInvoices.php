@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Fiscal\AsaasFiscalProvider;
+use App\Jobs\DeliverNfseInvoice;
 use App\Models\FiscalAccount;
 use App\Models\NfseInvoice;
 use Illuminate\Console\Command;
@@ -64,6 +65,12 @@ class ReconcileFiscalInvoices extends Command
 
                 $invoice->forceFill($update)->save();
                 $stats['updated']++;
+
+                // Autorizacao confirmada por reconciliacao (webhook perdido):
+                // entrega ao cliente final nos canais habilitados.
+                if ($result->status === 'authorized' && $invoice->hasRequestedDelivery() && $invoice->delivery_status !== 'sent') {
+                    DeliverNfseInvoice::dispatch($invoice->id);
+                }
             } catch (\Throwable $exception) {
                 $stats['errors']++;
                 $this->warn('Falha ao reconciliar ' . $invoice->id . ': ' . $exception->getMessage());
