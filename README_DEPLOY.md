@@ -142,14 +142,17 @@ MAIL_PORT=587
 MAIL_USERNAME=usuario
 MAIL_PASSWORD=senha
 MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS="contato@seudominio.com"
-MAIL_FROM_NAME="${APP_NAME}"
-NFSE_EMAIL_FROM="contato@seudominio.com"
-NFSE_EMAIL_FROM_NAME="${MAIL_FROM_NAME}"
+MAIL_FROM_ADDRESS="nfse@sunfitbronze.com.br"
+MAIL_FROM_NAME="SunFit Bronze"
+NFSE_EMAIL_FROM="nfse@sunfitbronze.com.br"
+NFSE_EMAIL_FROM_NAME="SunFit Bronze"
 ```
 
 Requisitos: o remetente precisa estar em SPF **e** DKIM no dominio, senao a
-mensagem cai em spam. Confirme com `php artisan nfse:doctor --probe`.
+mensagem cai em spam. Se `sunfitbronze.com.br` ainda nao tiver os registros
+apontando para este servidor, duas saidas: (a) adicionar SPF+DKIM no DNS do
+cliente; ou (b) usar um remetente do proprio servidor (`...@teresinasoft.com.br`)
+mantendo o nome "SunFit Bronze". Confirme com `php artisan nfse:doctor --probe`.
 Com `MAIL_MAILER=log` o canal de e-mail registra falha de proposito - o sistema
 nao finge que enviou.
 
