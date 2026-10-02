@@ -98,4 +98,53 @@ class ConfigureEstablishmentTest extends TestCase
             FiscalConfiguration::firstOrFail()->default_delivery_channels
         );
     }
+
+    public function test_doctor_fails_and_points_out_missing_email_and_whatsapp(): void
+    {
+        config([
+            'mail.default' => 'log',
+            'services.whatsapp.provider' => 'fake',
+            'services.whatsapp.access_token' => null,
+            'services.whatsapp.phone_number_id' => null,
+            'services.nfse_delivery.whatsapp_template' => '',
+            'services.nfse_delivery.email_from' => 'hello@example.com',
+        ]);
+
+        $this->artisan('nfse:doctor')->assertFailed();
+
+        $this->artisan('nfse:doctor')
+            ->expectsOutputToContain('MAIL_MAILER')
+            ->expectsOutputToContain('META_ACCESS_TOKEN')
+            ->expectsOutputToContain('NFS-e')
+            ->assertFailed();
+    }
+
+    public function test_doctor_passes_when_delivery_is_configured(): void
+    {
+        FiscalConfiguration::create([
+            'establishment_external_id' => 'qa-establishment-001',
+            'municipality_code' => '3509502',
+            'municipality_name' => 'Campinas',
+            'provider' => 'asaas',
+            'environment' => 'restricted',
+            'provider_registration' => '68272117000168',
+            'municipal_inscription' => '161150100118',
+            'tax_regime' => 'Simples Nacional',
+            'iss_rate' => '2.00',
+            'service_code' => '6.02',
+            'default_delivery_channels' => ['whatsapp' => true, 'email' => true, 'download' => true],
+            'active' => true,
+        ]);
+
+        config([
+            'mail.default' => 'smtp',
+            'services.whatsapp.provider' => 'meta',
+            'services.whatsapp.access_token' => 'meta-token',
+            'services.whatsapp.phone_number_id' => '123456',
+            'services.nfse_delivery.whatsapp_template' => 'nfse_disponivel',
+            'services.nfse_delivery.email_from' => 'contato@seudominio.com',
+        ]);
+
+        $this->artisan('nfse:doctor')->assertSuccessful();
+    }
 }

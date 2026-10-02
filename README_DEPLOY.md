@@ -110,3 +110,77 @@ php artisan fiscal:establishment --establishment=qa-establishment-001 \
   --cnpj=68272117000168 --inscricao-municipal=161150100118 \
   --tax-regime="Simples Nacional" --iss-rate=2.00 --delivery=whatsapp,email,download
 ```
+
+
+## Antes de homologar: `php artisan nfse:doctor`
+
+O comando responde "o que ainda falta" para a entrega funcionar. Ele nunca
+imprime segredos, apenas se estao preenchidos. Sai com codigo de erro 1 se
+houver bloqueio.
+
+```
+php artisan nfse:doctor          # so leitura do .env e do banco
+php artisan nfse:doctor --probe  # testa de verdade: conexao SMTP e API da Meta
+```
+
+O que ele verifica:
+
+| Bloco | Verifica |
+|---|---|
+| E-mail | `MAIL_MAILER` (log/array = bloqueio), `NFSE_EMAIL_FROM`, conexao SMTP (`--probe`) |
+| WhatsApp | `WHATSAPP_PROVIDER` (fake = bloqueio), `META_ACCESS_TOKEN`, `META_PHONE_NUMBER_ID`, `NFSE_WHATSAPP_TEMPLATE`, nome/numero na Meta (`--probe`) |
+| Estabelecimentos | municipio, servico, CNPJ, IM, regime/aliquota, canais padrao e credencial do provedor |
+| Fila | `QUEUE_CONNECTION` e o cron do `schedule:run` |
+| Pendencias | quantas notas autorizadas ainda nao foram entregues (reprocessar com `nfse:deliver --retry-failed`) |
+
+## Configurar o e-mail (SMTP)
+
+```
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.seuprovedor.com
+MAIL_PORT=587
+MAIL_USERNAME=usuario
+MAIL_PASSWORD=senha
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="contato@seudominio.com"
+MAIL_FROM_NAME="${APP_NAME}"
+NFSE_EMAIL_FROM="contato@seudominio.com"
+NFSE_EMAIL_FROM_NAME="${MAIL_FROM_NAME}"
+```
+
+Requisitos: o remetente precisa estar em SPF **e** DKIM no dominio, senao a
+mensagem cai em spam. Confirme com `php artisan nfse:doctor --probe`.
+Com `MAIL_MAILER=log` o canal de e-mail registra falha de proposito - o sistema
+nao finge que enviou.
+
+## Configurar o WhatsApp (Meta Cloud API)
+
+```
+WHATSAPP_PROVIDER=meta
+META_ACCESS_TOKEN=seu-token-permanente
+META_PHONE_NUMBER_ID=id-do-numero
+META_WABA_ID=id-da-conta
+META_APP_ID=id-do-app
+META_APP_SECRET=segredo-do-app
+META_VERIFY_TOKEN=valor-aleatorio
+META_GRAPH_VERSION=v25.0
+NFSE_WHATSAPP_TEMPLATE=nome_do_template
+NFSE_WHATSAPP_TEMPLATE_LANGUAGE=pt_BR
+```
+
+Sobre o template: a Meta so permite mensagem **de template** fora da janela de
+24h. Se `NFSE_WHATSAPP_TEMPLATE` estiver vazio, o aviso so sai para quem
+recebeu alguma mensagem do seu numero nas ultimas 24h; fora disso, a Meta
+rejeita com erro de template.
+
+Para criar o template, no Meta Business Manager: Templates > Criar. Categoria
+`UTILITARIO` (o aviso da nota e informativo). Nome sugerido: `nfse_disponivel`.
+Corpo com uma variavel por linha, por exemplo:
+
+```
+Ola {{1}}
+Sua NFS-e numero {{2}} no valor de R$ {{3}} esta disponivel.
+```
+
+O codigo envia nome, numero e valor nessa ordem. Depois de aprovado, preencha
+`NFSE_WHATSAPP_TEMPLATE=nfse_disponivel` e rode `php artisan nfse:doctor --probe`.
