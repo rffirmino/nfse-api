@@ -192,7 +192,11 @@ class AsaasFiscalProvider implements FiscalProvider
 
     private function client()
     {
-        return Http::withToken($this->accessToken)->acceptJson()->timeout((int) config('services.asaas.timeout', 20));
+        // A API v3 do Asaas autentica pelo header `access_token` (não pelo
+        // `Authorization: Bearer`). Usar Bearer retorna 401 invalid_jwt.
+        return Http::withHeaders(['access_token' => $this->accessToken])
+            ->acceptJson()
+            ->timeout((int) config('services.asaas.timeout', 20));
     }
 
     public static function mapStatus(?string $asaasStatus): string
@@ -208,8 +212,10 @@ class AsaasFiscalProvider implements FiscalProvider
 
     private function errorMessage(?array $body, int $status): string
     {
-        $description = $body['errors'][0]['description'] ?? null;
+        $error = $body['errors'][0] ?? null;
+        $code = $error['code'] ?? null;
+        $description = $error['description'] ?? null;
 
-        return 'Asaas HTTP ' . $status . ($description ? ': ' . $description : '');
+        return 'Asaas HTTP ' . $status . ($code !== null ? ' [' . $code . ']' : '') . ($description !== null ? ': ' . $description : '');
     }
 }

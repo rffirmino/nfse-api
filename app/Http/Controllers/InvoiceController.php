@@ -545,11 +545,22 @@ class InvoiceController extends Controller
                 'supports_cancellation' => $options['supportsCancellation'] ?? null,
                 'requires_certificate' => strtoupper((string) ($options['authenticationType'] ?? '')) === 'CERTIFICATE',
             ];
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            $message = (string) $exception->getMessage();
+
+            // O Sandbox do Asaas devolve invalid_person_type no municipalOptions
+            // mesmo com a conta já convertida para PJ (limitação conhecida); a
+            // emissão e os serviços continuam funcionando. Não é "município não
+            // coberto", então não deve impedir o onboarding.
+            $isSandboxLimitation = str_contains($message, 'invalid_person_type')
+                || str_contains($message, 'pessoa');
+
             return [
                 'provider' => 'asaas',
                 'checked' => true,
-                'error' => 'Não foi possível confirmar a cobertura do município no Asaas.',
+                'error' => $isSandboxLimitation
+                    ? 'Sandbox: municipalOptions responde invalid_person_type mesmo com conta PJ (limitação do Asaas); emissão e serviços seguem funcionando.'
+                    : 'Não foi possível confirmar a cobertura do município no Asaas.',
             ];
         }
     }

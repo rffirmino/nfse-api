@@ -144,7 +144,7 @@ class InvoiceDeliveryService
                 'recipient_phone' => $phone,
                 'template_name' => $template !== '' ? $template : null,
                 'template_language' => $template !== '' ? (string) config('services.nfse_delivery.whatsapp_template_language') : null,
-                'template_parameters' => $template !== '' ? $this->templateParameters($invoice, $document) : null,
+                'template_parameters' => $template !== '' ? $this->templateParameters($invoice) : null,
                 'message_text' => $template === '' ? $this->whatsappText($invoice, $document) : null,
                 'appointment_external_id' => $invoice->appointment_external_id,
                 'status' => 'pending',
@@ -176,20 +176,18 @@ class InvoiceDeliveryService
     }
 
     /**
+     * Parâmetros do template (sempre 2, na ordem dos placeholders {{1}} {{2}}):
+     * número da nota e valor. O download do documento fica no app/e-mail; o
+     * WhatsApp é só o aviso, para não depender de link de provedor (que expira).
+     *
      * @return array<int, array{name: string, value: string}>
      */
-    private function templateParameters(NfseInvoice $invoice, ?string $document): array
+    private function templateParameters(NfseInvoice $invoice): array
     {
-        $parameters = [
+        return [
             ['name' => 'numero_nota', 'value' => (string) ($invoice->invoice_number ?? '-')],
             ['name' => 'valor', 'value' => 'R$ ' . number_format((float) ($invoice->amount ?? 0), 2, ',', '.')],
         ];
-
-        if ($document !== null && $document !== '') {
-            $parameters[] = ['name' => 'link_nota', 'value' => $document];
-        }
-
-        return $parameters;
     }
 
     private function whatsappText(NfseInvoice $invoice, ?string $document): string

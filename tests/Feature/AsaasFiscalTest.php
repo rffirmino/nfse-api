@@ -55,7 +55,7 @@ class AsaasFiscalTest extends TestCase
         $this->assertSame('authorized', $result->status);
         $this->assertSame('inv_1', $result->externalId);
         Http::assertSent(fn ($request) => str_contains($request->url(), '/v3/invoices')
-            && $request->hasHeader('Authorization', 'Bearer tok-asaas')
+            && $request->hasHeader('access_token', 'tok-asaas')
             && $request['municipalServiceCode'] === '6.02'
             && $request['customer'] === 'cus_123');
     }
@@ -111,7 +111,7 @@ class AsaasFiscalTest extends TestCase
         $invoice->refresh();
         $this->assertSame('authorized', $invoice->status);
         $this->assertSame('inv_sub', $invoice->external_id);
-        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer token-subconta'));
+        Http::assertSent(fn ($request) => $request->hasHeader('access_token', 'token-subconta'));
     }
 
     public function test_fiscal_account_token_is_encrypted(): void
