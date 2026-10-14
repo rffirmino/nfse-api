@@ -72,12 +72,12 @@ services:
       - "traefik.http.routers.nfse.rule=Host(`nfse.gtragendamentos.com.br`)"
       - "traefik.http.routers.nfse.entrypoints=websecure"
       - "traefik.http.routers.nfse.tls=true"
-      - "traefik.http.routers.nfse.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.nfse.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.nfse.loadbalancer.server.port=80"
-      - "traefik.docker.network=traefik"
+      - "traefik.docker.network=network_public"
     networks:
       - default
-      - traefik
+      - network_public
 
   db:
     image: mariadb:10.11
@@ -101,6 +101,8 @@ volumes:
   db_data:
 
 networks:
-  # Ajuste o nome da rede externa para a rede usada pelo seu Traefik.
-  traefik:
+  # Rede externa do Traefik desta VPS (mesma usada por sunfit-backend
+  # e sunfit-frontend).
+  network_public:
     external: true
+    name: network_public
