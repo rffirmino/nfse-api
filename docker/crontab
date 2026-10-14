@@ -1,0 +1,3 @@
+# Scheduler do Laravel — roda a cada minuto e executa as rotinas agendadas em
+# routes/console.php (fiscal:reconcile a cada 5 min, nfse:deliver a cada 10 min).
+* * * * * www-data cd /var/www/html && /usr/local/bin/php artisan schedule:run >> /var/log/laravel-schedule.log 2>&1

@@ -1,0 +1,106 @@
+# API fiscal WhatsApp/NFS-e — stack do cliente (Traefik + MariaDB + GitHub Actions)
+#
+# Segredos/variáveis: mantenha em um `.env` NA MESMA PASTA deste compose
+# (não confundir com o `.env` do Laravel, que não é versionado). Exemplo em
+# `.env.docker.example`.
+
+services:
+  app:
+    build: .
+    image: ghcr.io/rffirmino/nfse-api:latest
+    restart: unless-stopped
+    environment:
+      APP_NAME: ${APP_NAME:-nfse-api}
+      APP_ENV: production
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL:-https://nfse.gtragendamentos.com.br}
+
+      HMAC_SECRET: ${HMAC_SECRET}
+      HMAC_CLIENTS: ${HMAC_CLIENTS:-{}}
+
+      NFSE_PROVIDER: ${NFSE_PROVIDER:-asaas}
+      ASAAS_BASE_URL: ${ASAAS_BASE_URL:-https://api-sandbox.asaas.com}
+      ASAAS_ACCESS_TOKEN: ${ASAAS_ACCESS_TOKEN:-}
+      ASAAS_TIMEOUT: ${ASAAS_TIMEOUT:-20}
+      ASAAS_WEBHOOK_TOKEN: ${ASAAS_WEBHOOK_TOKEN:-}
+
+      INBOUND_CALLBACK_URL: ${INBOUND_CALLBACK_URL:-}
+      INBOUND_CALLBACK_SECRET: ${INBOUND_CALLBACK_SECRET:-}
+
+      NFSE_WHATSAPP_TEMPLATE: ${NFSE_WHATSAPP_TEMPLATE:-nfse_disponivel}
+      NFSE_WHATSAPP_TEMPLATE_LANGUAGE: ${NFSE_WHATSAPP_TEMPLATE_LANGUAGE:-pt_BR}
+      NFSE_EMAIL_FROM: ${NFSE_EMAIL_FROM:-nfse@sunfitbronze.com.br}
+      NFSE_EMAIL_FROM_NAME: ${NFSE_EMAIL_FROM_NAME:-SunFit Bronze}
+
+      WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-meta}
+      META_GRAPH_BASE_URL: ${META_GRAPH_BASE_URL:-https://graph.facebook.com}
+      META_GRAPH_VERSION: ${META_GRAPH_VERSION:-v25.0}
+      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
+      META_PHONE_NUMBER_ID: ${META_PHONE_NUMBER_ID:-}
+      META_WABA_ID: ${META_WABA_ID:-}
+      META_APP_ID: ${META_APP_ID:-}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-}
+
+      MAIL_MAILER: ${MAIL_MAILER:-smtp}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-ssl}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-nfse@sunfitbronze.com.br}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-SunFit Bronze}
+
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: ${LOG_LEVEL:-warning}
+
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_DATABASE: ${DB_DATABASE:-nfse}
+      DB_USERNAME: ${DB_USERNAME:-nfse}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nfse.rule=Host(`nfse.gtragendamentos.com.br`)"
+      - "traefik.http.routers.nfse.entrypoints=websecure"
+      - "traefik.http.routers.nfse.tls=true"
+      - "traefik.http.routers.nfse.tls.certresolver=letsencrypt"
+      - "traefik.http.services.nfse.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik"
+    networks:
+      - default
+      - traefik
+
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-nfse}
+      MARIADB_USER: ${DB_USERNAME:-nfse}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - default
+
+volumes:
+  db_data:
+
+networks:
+  # Ajuste o nome da rede externa para a rede usada pelo seu Traefik.
+  traefik:
+    external: true
