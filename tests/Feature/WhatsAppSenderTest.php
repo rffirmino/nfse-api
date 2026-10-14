@@ -89,6 +89,39 @@ class WhatsAppSenderTest extends TestCase
             && $request->hasHeader('Authorization', 'Bearer central-token'));
     }
 
+    public function test_template_parameters_include_parameter_name(): void
+    {
+        Http::fake(['*' => Http::response(['messages' => [['id' => 'wamid.T']]], 200)]);
+
+        $message = WhatsAppMessage::create([
+            'idempotency_key' => 'sender:3',
+            'event' => 'appointment.reminder',
+            'establishment_external_id' => 'est-sem-sender',
+            'recipient_role' => 'customer',
+            'recipient_phone' => '+5511999999999',
+            'template_name' => 'agendamento_confirmado',
+            'template_language' => 'pt_BR',
+            'template_parameters' => [
+                ['name' => 'cliente', 'value' => 'Maria'],
+                ['name' => 'valor', 'value' => 'R$ 100,00'],
+            ],
+            'status' => 'queued',
+            'provider' => 'meta',
+        ]);
+
+        (new MetaWhatsAppProvider())->send($message);
+
+        Http::assertSent(function ($request) {
+            $body = $request->data();
+            $params = $body['template']['components'][0]['parameters'] ?? [];
+
+            return $body['template']['name'] === 'agendamento_confirmado'
+                && $params[0]['parameter_name'] === 'cliente'
+                && $params[0]['text'] === 'Maria'
+                && $params[1]['parameter_name'] === 'valor';
+        });
+    }
+
     public function test_senders_endpoint_upserts_and_lists(): void
     {
         $this->signedPost('/api/v1/whatsapp/senders', [

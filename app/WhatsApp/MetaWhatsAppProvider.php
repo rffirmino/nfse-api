@@ -109,10 +109,21 @@ class MetaWhatsAppProvider implements WhatsAppProvider
         $parameters = $message->template_parameters ?? [];
 
         if ($parameters !== []) {
-            $values = array_map(static fn ($p) => $p['value'] ?? $p, array_values($parameters));
             $components[] = [
                 'type' => 'body',
-                'parameters' => array_map(static fn ($v) => ['type' => 'text', 'text' => (string) $v], $values),
+                'parameters' => array_map(static function ($p) {
+                    $value = is_array($p) ? ($p['value'] ?? null) : $p;
+                    $parameter = ['type' => 'text', 'text' => (string) $value];
+
+                    // Templates com variáveis NOMEADAS ({{cliente}}, {{valor}}, ...)
+                    // exigem o campo parameter_name; sem ele a Meta devolve
+                    // "Parameter name is missing or empty".
+                    if (is_array($p) && !empty($p['name'])) {
+                        $parameter['parameter_name'] = (string) $p['name'];
+                    }
+
+                    return $parameter;
+                }, array_values($parameters)),
             ];
         }
 
