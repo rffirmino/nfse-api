@@ -5,6 +5,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# O GITHUB_TOKEN precisa de packages:write para publicar a imagem no GHCR.
+# Sem isso o push falha com "denied: installation not allowed to Create
+# organization package", mesmo com o build concluido.
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-push-deploy:
     runs-on: ubuntu-latest
