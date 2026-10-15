@@ -17,7 +17,11 @@ services:
       APP_URL: ${APP_URL:-https://nfse.gtragendamentos.com.br}
 
       HMAC_SECRET: ${HMAC_SECRET}
-      HMAC_CLIENTS: ${HMAC_CLIENTS:-{}}
+      # Sem default com chaves: o compose fecha a interpolacao na primeira
+      # '}', o que concatenava um '}' extra e invalidava o JSON quando a
+      # variavel estava definida. Vazio aqui, e o config/services.php ja
+      # trata ausencia caindo no HMAC_SECRET global.
+      HMAC_CLIENTS: ${HMAC_CLIENTS:-}
 
       NFSE_PROVIDER: ${NFSE_PROVIDER:-asaas}
       ASAAS_BASE_URL: ${ASAAS_BASE_URL:-https://api-sandbox.asaas.com}
