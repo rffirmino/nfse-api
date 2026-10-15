@@ -74,6 +74,10 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nfse.rule=Host(`nfse.gtragendamentos.com.br`)"
+      # O frontend do GTR tem HostRegexp curinga para *.gtragendamentos.com.br.
+      # Sem prioridade explicita o Traefik escolhe a regra MAIS LONGA, que e a
+      # dele — e este dominio caia no sistema errado.
+      - "traefik.http.routers.nfse.priority=100"
       - "traefik.http.routers.nfse.entrypoints=websecure"
       - "traefik.http.routers.nfse.tls=true"
       - "traefik.http.routers.nfse.tls.certresolver=letsencryptresolver"
