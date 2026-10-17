@@ -205,7 +205,11 @@ class AsaasFiscalProvider implements FiscalProvider
             'AUTHORIZED' => 'authorized',
             'CANCELED', 'CANCELLED' => 'cancelled',
             'ERROR' => 'error',
-            'SCHEDULED', 'SYNCHRONIZED', 'PROCESSING_CANCELLATION', 'CANCELLATION_DENIED' => 'processing',
+            // Cancelamento recusado pela prefeitura: a nota continua valida e
+            // autorizada. Mapear para 'processing' deixava a nota presa nesse
+            // estado para sempre, porque nenhum evento posterior chega.
+            'CANCELLATION_DENIED' => 'authorized',
+            'SCHEDULED', 'SYNCHRONIZED', 'PROCESSING_CANCELLATION' => 'processing',
             default => 'pending',
         };
     }
