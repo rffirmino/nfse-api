@@ -10,6 +10,12 @@ return [
     'fiscal' => [
         'provider' => env('NFSE_PROVIDER', 'fake'),
     ],
+    // Transporte HTTP do Resend (mailer 'resend'). A VPS bloqueia as portas
+    // de SMTP (25/465/587), entao o envio sai pela API em 443.
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
     'asaas' => [
         'base_url' => env('ASAAS_BASE_URL', 'https://api-sandbox.asaas.com'),
         'access_token' => env('ASAAS_ACCESS_TOKEN'),

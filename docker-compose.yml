@@ -47,7 +47,10 @@ services:
       META_APP_SECRET: ${META_APP_SECRET:-}
       META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-}
 
-      MAIL_MAILER: ${MAIL_MAILER:-smtp}
+      # 'resend' usa a API HTTP (443); 'smtp' nao funciona nesta VPS, que
+      # tem as portas 25/465/587 bloqueadas na saida.
+      MAIL_MAILER: ${MAIL_MAILER:-resend}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_HOST: ${MAIL_HOST:-}
       MAIL_PORT: ${MAIL_PORT:-465}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
