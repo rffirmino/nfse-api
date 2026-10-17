@@ -34,8 +34,9 @@ services:
 
       NFSE_WHATSAPP_TEMPLATE: ${NFSE_WHATSAPP_TEMPLATE:-nfse_disponivel}
       NFSE_WHATSAPP_TEMPLATE_LANGUAGE: ${NFSE_WHATSAPP_TEMPLATE_LANGUAGE:-pt_BR}
-      NFSE_EMAIL_FROM: ${NFSE_EMAIL_FROM:-nfse@sunfitbronze.com.br}
-      NFSE_EMAIL_FROM_NAME: ${NFSE_EMAIL_FROM_NAME:-SunFit Bronze}
+      NFSE_EMAIL_FROM: ${NFSE_EMAIL_FROM:-nfse@gtragendamentos.com.br}
+      NFSE_EMAIL_FROM_NAME: ${NFSE_EMAIL_FROM_NAME:-GTR Agendamentos}
+      NFSE_REPLY_TO: ${NFSE_REPLY_TO:-}
 
       WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-meta}
       META_GRAPH_BASE_URL: ${META_GRAPH_BASE_URL:-https://graph.facebook.com}
@@ -56,8 +57,8 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_ENCRYPTION: ${MAIL_ENCRYPTION:-ssl}
-      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-nfse@sunfitbronze.com.br}
-      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-SunFit Bronze}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-nfse@gtragendamentos.com.br}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-GTR Agendamentos}
 
       QUEUE_CONNECTION: database
       CACHE_STORE: database

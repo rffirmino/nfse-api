@@ -33,6 +33,9 @@ return [
         'whatsapp_template_language' => env('NFSE_WHATSAPP_TEMPLATE_LANGUAGE', 'pt_BR'),
         'email_from' => env('NFSE_EMAIL_FROM', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
         'email_from_name' => env('NFSE_EMAIL_FROM_NAME', env('MAIL_FROM_NAME', 'Example')),
+        // Para onde vai a resposta do cliente. O dominio remetente nao
+        // recebe e-mail (MX nulo), entao sem isso a resposta se perde.
+        'reply_to' => env('NFSE_REPLY_TO', ''),
     ],
     'whatsapp' => [
         'provider' => env('WHATSAPP_PROVIDER', 'fake'),

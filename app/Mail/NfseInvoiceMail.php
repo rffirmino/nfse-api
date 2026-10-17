@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\NfseInvoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -19,9 +20,17 @@ class NfseInvoiceMail extends Mailable
 
     public function envelope(): Envelope
     {
+        $replyTo = trim((string) config('services.nfse_delivery.reply_to', ''));
+
         return new Envelope(
             subject: 'Sua NFS-e nº ' . (string) ($this->invoice->invoice_number ?? '-') . ' está disponível',
-            from: (string) config('services.nfse_delivery.email_from', config('mail.from.address')),
+            from: new Address(
+                (string) config('services.nfse_delivery.email_from', config('mail.from.address')),
+                (string) config('services.nfse_delivery.email_from_name', config('mail.from.name')),
+            ),
+            // O dominio remetente tem MX nulo: sem Reply-To, a resposta do
+            // cliente volta como erro de entrega em vez de chegar a alguem.
+            replyTo: $replyTo !== '' ? [new Address($replyTo)] : [],
         );
     }
 
