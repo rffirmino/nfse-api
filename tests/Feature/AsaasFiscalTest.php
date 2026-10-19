@@ -69,6 +69,15 @@ class AsaasFiscalTest extends TestCase
         $this->assertSame('processing', (new AsaasFiscalProvider('tok'))->issueInvoice($this->invoice())->status);
     }
 
+    public function test_cancellation_denied_maps_back_to_authorized(): void
+    {
+        // Cancelamento recusado pela prefeitura: a nota continua válida/autorizada.
+        // Não pode voltar para 'processing', senão fica presa nesse estado.
+        $this->assertSame('authorized', AsaasFiscalProvider::mapStatus('CANCELLATION_DENIED'));
+        $this->assertSame('processing', AsaasFiscalProvider::mapStatus('PROCESSING_CANCELLATION'));
+        $this->assertSame('cancelled', AsaasFiscalProvider::mapStatus('CANCELED'));
+    }
+
     public function test_provider_creates_customer_when_missing(): void
     {
         Http::fake([
