@@ -57,6 +57,9 @@ class ReconcileFiscalInvoices extends Command
                 if ($result->status === 'authorized') {
                     $update['issued_at'] = $invoice->issued_at ?: now();
                     $update['error_message'] = null;
+                    // Numero, serie e links do PDF/XML vivem so na resposta do
+                    // Asaas; sem isso a nota ia para o cliente sem o documento.
+                    $update += AsaasFiscalProvider::camposDoDocumento($result->payload ?? []);
                 } elseif ($result->status === 'cancelled') {
                     $update['cancelled_at'] = $invoice->cancelled_at ?: now();
                 } elseif ($result->status === 'error') {

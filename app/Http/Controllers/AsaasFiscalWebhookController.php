@@ -69,6 +69,7 @@ class AsaasFiscalWebhookController extends Controller
 
         if ($status === 'authorized') {
             $update['issued_at'] = $invoice->issued_at ?: now();
+            $update += AsaasFiscalProvider::camposDoDocumento($payload);
         } elseif ($status === 'cancelled') {
             $update['cancelled_at'] = $invoice->cancelled_at ?: now();
         }

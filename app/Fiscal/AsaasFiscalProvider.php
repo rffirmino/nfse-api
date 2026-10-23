@@ -177,8 +177,13 @@ class AsaasFiscalProvider implements FiscalProvider
         $regras = (array) ($configuration->retention_rules ?? []);
         $iss = $requestPayload['iss_rate'] ?? ($configuration->iss_rate ?? 0);
 
+        // O Portal Nacional exige a NBS; preencher no cadastro do servico no
+        // Asaas nao basta, ela tem que vir no payload da emissao.
+        $nbs = $requestPayload['nbs_code'] ?? ($configuration->nbs ?? null);
+
         return [
             'retainIss' => (bool) ($requestPayload['retain_iss'] ?? $regras['iss'] ?? false),
+            'nbsCode' => $nbs !== null && $nbs !== '' ? (string) $nbs : null,
             'iss' => (float) $iss,
             'cofins' => (float) ($regras['cofins'] ?? 0),
             'csll' => (float) ($regras['csll'] ?? 0),
@@ -225,6 +230,38 @@ class AsaasFiscalProvider implements FiscalProvider
         return Http::withHeaders(['access_token' => $this->accessToken])
             ->acceptJson()
             ->timeout((int) config('services.asaas.timeout', 20));
+    }
+
+    /**
+     * Campos da nota autorizada que vivem na resposta do Asaas e precisam ser
+     * persistidos: numero, serie e os links do PDF e do XML.
+     *
+     * Sem isso a nota era entregue ao cliente sem o documento — o
+     * document_url ficava nulo e a mensagem saia sem o link da NFS-e.
+     *
+     * @param  array<string, mixed>  $payload  corpo devolvido pelo Asaas
+     * @return array<string, string> colunas de NfseInvoice a atualizar
+     */
+    public static function camposDoDocumento(array $payload): array
+    {
+        $dados = $payload['invoice'] ?? $payload;
+
+        $mapa = [
+            'invoice_number' => 'number',
+            'series' => 'rpsSerie',
+            'document_url' => 'pdfUrl',
+            'xml' => 'xmlUrl',
+        ];
+
+        $campos = [];
+        foreach ($mapa as $coluna => $chave) {
+            $valor = $dados[$chave] ?? null;
+            if ($valor !== null && $valor !== '') {
+                $campos[$coluna] = (string) $valor;
+            }
+        }
+
+        return $campos;
     }
 
     public static function mapStatus(?string $asaasStatus): string
