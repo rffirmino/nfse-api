@@ -137,6 +137,7 @@ class AsaasFiscalProvider implements FiscalProvider
         $requestPayload = $invoice->request_payload ?? [];
 
         $serviceCode = $requestPayload['service_code'] ?? null;
+        $configuration = null;
         if ($invoice->fiscal_configuration_id) {
             $configuration = FiscalConfiguration::find($invoice->fiscal_configuration_id);
             $serviceCode = $serviceCode ?: ($configuration->service_code ?? null);
@@ -157,6 +158,33 @@ class AsaasFiscalProvider implements FiscalProvider
             'customer' => $customerId,
             'municipalServiceCode' => (string) $serviceCode,
             'description' => (string) ($requestPayload['description'] ?? 'Serviço prestado'),
+            // Obrigatorio no POST /v3/invoices: sem ele o Asaas devolve
+            // 400 parse_error "O campo 'taxes' e obrigatorio".
+            'taxes' => $this->buildTaxes($configuration ?? null, $requestPayload),
+        ];
+    }
+
+    /**
+     * Bloco `taxes` do POST /v3/invoices.
+     *
+     * O Asaas exige o objeto completo, mesmo zerado. Para MEI o ISS ja esta no
+     * DAS, entao a aliquota e 0 — e e isso que iss_rate guarda. Os demais
+     * tributos federais so sao destacados quando o tomador retem, o que o
+     * retention_rules da configuracao informa.
+     */
+    private function buildTaxes(?FiscalConfiguration $configuration, array $requestPayload): array
+    {
+        $regras = (array) ($configuration->retention_rules ?? []);
+        $iss = $requestPayload['iss_rate'] ?? ($configuration->iss_rate ?? 0);
+
+        return [
+            'retainIss' => (bool) ($requestPayload['retain_iss'] ?? $regras['iss'] ?? false),
+            'iss' => (float) $iss,
+            'cofins' => (float) ($regras['cofins'] ?? 0),
+            'csll' => (float) ($regras['csll'] ?? 0),
+            'inss' => (float) ($regras['inss'] ?? 0),
+            'ir' => (float) ($regras['ir'] ?? 0),
+            'pis' => (float) ($regras['pis'] ?? 0),
         ];
     }
 
